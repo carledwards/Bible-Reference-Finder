@@ -125,6 +125,14 @@ header {
   color: var(--text-primary) !important;
 }
 
+.text-gray-600 {
+  color: var(--text-secondary) !important;
+}
+
+.text-gray-700 {
+  color: var(--text-primary) !important;
+}
+
 .border {
   border-color: var(--border-primary) !important;
 }
