@@ -20,6 +20,7 @@ const themeChevron = document.getElementById("themeChevron") as HTMLElement;
 const recentsToggle = document.getElementById("recentsToggle") as HTMLButtonElement;
 const recentsPanel = document.getElementById("recentsPanel") as HTMLDivElement;
 const recentsList = document.getElementById("recentsList") as HTMLUListElement;
+const inlineVersesToggle = document.getElementById("inlineVerses") as HTMLInputElement;
 
 let inputText = DEFAULT_TEXT;
 let version = "web"; // "web" or "kjv"
@@ -28,6 +29,7 @@ let fetched: FetchedCache = {};
 let matches: RefMatch[] = [];
 let recentTexts: string[] = [];
 let recentsVisible = false;
+let inlineVersesEnabled = false;
 
 function applyTheme(theme: string) {
   document.documentElement.setAttribute("data-theme", theme);
@@ -135,7 +137,13 @@ function recompute() {
 }
 
 function renderPreview() {
-  const html = renderMarkedHtml(inputText, matches);
+  let html = renderMarkedHtml(inputText, matches);
+  
+  // If inline verses is enabled, add verse text after each reference
+  if (inlineVersesEnabled) {
+    html = addInlineVerses(html);
+  }
+  
   previewEl.innerHTML = html;
 
   // Apply active highlight if present
@@ -143,6 +151,30 @@ function renderPreview() {
     const node = document.getElementById(`ref-${activeId}`);
     node?.classList.add("active");
   }
+}
+
+// Add inline verse text to the HTML
+function addInlineVerses(html: string): string {
+  let result = html;
+  
+  for (const match of matches) {
+    const cache = fetched[match.id];
+    if (cache && typeof cache === 'string') {
+      const refSpan = `<span id="ref-${match.id}"`;
+      const refSpanEnd = '</span>';
+      
+      const startIndex = result.indexOf(refSpan);
+      if (startIndex !== -1) {
+        const endIndex = result.indexOf(refSpanEnd, startIndex) + refSpanEnd.length;
+        if (endIndex !== -1) {
+          const verseHtml = `<div class="my-3 mx-6 p-3 bg-gray-50 border-l-4 border-blue-300 italic text-sm leading-relaxed">${formatVerseText(cache)}</div>`;
+          result = result.slice(0, endIndex) + verseHtml + result.slice(endIndex);
+        }
+      }
+    }
+  }
+  
+  return result;
 }
 
 function renderRefList() {
@@ -282,6 +314,14 @@ recentsList.addEventListener("click", (e) => {
   }
 });
 
+// Inline verses toggle
+inlineVersesToggle.addEventListener("change", () => {
+  inlineVersesEnabled = inlineVersesToggle.checked;
+  localStorage.setItem("inlineVerses", inlineVersesEnabled.toString());
+  ensureFetchAllVerses(); // Auto-fetch verses when enabled
+  renderPreview();
+});
+
 // Archive text when user makes significant changes
 let archiveTimeout: number | null = null;
 function scheduleArchive() {
@@ -324,11 +364,35 @@ function ensureFetchActive() {
   });
 }
 
+// Load inline verses preference
+function loadInlineVersesPreference(): boolean {
+  const saved = localStorage.getItem("inlineVerses");
+  return saved === "true";
+}
+
+// Auto-fetch verses when inline mode is enabled
+function ensureFetchAllVerses() {
+  if (!inlineVersesEnabled) return;
+  
+  for (const match of matches) {
+    if (fetched[match.id] === undefined) {
+      fetched[match.id] = undefined;
+      fetchVerseText(match, version).then((t) => {
+        fetched[match.id] = t;
+        renderPreview(); // Re-render to show the new verse
+      });
+    }
+  }
+}
+
 // Initial load
 const initialTheme = getInitialTheme();
 applyTheme(initialTheme);
 themeButtonText.textContent = getThemeDisplayName(initialTheme);
 recentTexts = loadRecentTexts();
 renderRecents();
+inlineVersesEnabled = loadInlineVersesPreference();
+inlineVersesToggle.checked = inlineVersesEnabled;
 inputEl.value = inputText;
 recompute();
+ensureFetchAllVerses();

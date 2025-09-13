@@ -23,31 +23,42 @@ export async function fetchVerseText(ref: RefMatch, version: string): Promise<st
 
 // Add verse numbers to the text based on the reference parts
 function addVerseNumbers(text: string, ref: RefMatch): string {
-  // If it's a single verse, just add the verse number at the beginning
-  if (ref.parts.length === 1 && ref.parts[0].start === ref.parts[0].end) {
-    return `${ref.parts[0].start} ${text}`;
-  }
-  
-  // For multiple verses, we need to try to split the text intelligently
-  // This is a best-effort approach since bible-api.com doesn't provide verse boundaries
-  const sentences = text.split(/(?<=[.!?])\s+/);
-  const allVerses: number[] = [];
-  
   // Collect all verse numbers from the parts
+  const allVerses: number[] = [];
   for (const part of ref.parts) {
     for (let v = part.start; v <= part.end; v++) {
       allVerses.push(v);
     }
   }
   
-  // If we have the same number of sentences as verses, map them 1:1
-  if (sentences.length === allVerses.length) {
-    return sentences.map((sentence, i) => `${allVerses[i]} ${sentence}`).join(' ');
+  // If it's a single verse, just add the verse number at the beginning
+  if (allVerses.length === 1) {
+    return `${allVerses[0]} ${text}`;
   }
   
-  // Otherwise, just add the verse range at the beginning
-  const verseRange = ref.parts
-    .map(p => p.start === p.end ? `${p.start}` : `${p.start}-${p.end}`)
-    .join(',');
-  return `${verseRange} ${text}`;
+  // For multiple verses, we'll use a simple approach:
+  // Split the text into roughly equal parts and assign verse numbers
+  const words = text.split(/\s+/);
+  const wordsPerVerse = Math.ceil(words.length / allVerses.length);
+  
+  const result: string[] = [];
+  let wordIndex = 0;
+  
+  for (let i = 0; i < allVerses.length; i++) {
+    const verseWords: string[] = [];
+    const wordsToTake = i === allVerses.length - 1 
+      ? words.length - wordIndex  // Take all remaining words for the last verse
+      : wordsPerVerse;
+    
+    for (let j = 0; j < wordsToTake && wordIndex < words.length; j++) {
+      verseWords.push(words[wordIndex]);
+      wordIndex++;
+    }
+    
+    if (verseWords.length > 0) {
+      result.push(`${allVerses[i]} ${verseWords.join(' ')}`);
+    }
+  }
+  
+  return result.join(' ');
 }

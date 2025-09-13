@@ -14,7 +14,7 @@
       <header class="sticky top-0 z-10 bg-white/80 backdrop-blur border-b">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
           <h1 class="text-xl font-semibold">Bible Reference Finder</h1>
-          <div class="ml-auto flex items-center gap-2 text-sm relative">
+          <div class="ml-auto flex items-center gap-4 text-sm relative">
             <label class="font-medium">Theme:</label>
             <div class="relative">
               <button id="themeButton" class="flex items-center gap-1 px-3 py-1 text-xs border rounded bg-white hover:bg-gray-50 transition-colors">
@@ -60,7 +60,13 @@
             class="w-full h-48 p-3 border rounded bg-white text-sm leading-6"
             placeholder="Paste any text. E.g. 'We love John 3:16-18 and 1 Cor 13:4–7; 14:1.'"></textarea>
 
-          <label class="text-sm font-medium">Marked preview</label>
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium">Marked preview</label>
+            <label class="flex items-center gap-2 text-xs">
+              <input type="checkbox" id="inlineVerses" class="rounded">
+              <span>Inline verses</span>
+            </label>
+          </div>
           <div id="markedPreview"
             class="p-3 bg-white border rounded shadow-sm text-[15px] leading-7"></div>
         </section>
