@@ -1,0 +1,202 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+/* Theme Variables */
+:root {
+  /* Light Theme (Default) */
+  --bg-primary: #f9fafb;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f3f4f6;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-primary: #d1d5db;
+  --accent-primary: #3b82f6;
+  --accent-hover: #2563eb;
+}
+
+[data-theme="light-high-contrast"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f8fafc;
+  --text-primary: #000000;
+  --text-secondary: #374151;
+  --border-primary: #000000;
+  --accent-primary: #1d4ed8;
+  --accent-hover: #1e40af;
+}
+
+[data-theme="light-soft"] {
+  --bg-primary: #fefefe;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
+  --text-primary: #2d3748;
+  --text-secondary: #718096;
+  --border-primary: #e2e8f0;
+  --accent-primary: #4299e1;
+  --accent-hover: #3182ce;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #111827;
+  --bg-secondary: #030712;
+  --bg-tertiary: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --border-primary: #374151;
+  --accent-primary: #60a5fa;
+  --accent-hover: #3b82f6;
+}
+
+[data-theme="dark-soft"] {
+  --bg-primary: #1a202c;
+  --bg-secondary: #2d3748;
+  --bg-tertiary: #4a5568;
+  --text-primary: #f7fafc;
+  --text-secondary: #a0aec0;
+  --border-primary: #4a5568;
+  --accent-primary: #63b3ed;
+  --accent-hover: #4299e1;
+}
+
+[data-theme="dark-high-contrast"] {
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
+  --bg-tertiary: #1a1a1a;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --border-primary: #ffffff;
+  --accent-primary: #00d4ff;
+  --accent-hover: #0099cc;
+}
+
+/* Apply theme variables */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.bg-white {
+  background-color: var(--bg-secondary) !important;
+}
+
+.bg-gray-50 {
+  background-color: var(--bg-primary) !important;
+}
+
+.bg-gray-100 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+/* Header styling */
+header {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+/* Make sure backdrop blur works with themes */
+.bg-white\/80 {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme="dark"] .bg-white\/80,
+[data-theme="dark-soft"] .bg-white\/80,
+[data-theme="dark-high-contrast"] .bg-white\/80 {
+  background-color: rgba(3, 7, 18, 0.8) !important;
+}
+
+[data-theme="dark-soft"] .bg-white\/80 {
+  background-color: rgba(45, 55, 72, 0.8) !important;
+}
+
+[data-theme="dark-high-contrast"] .bg-white\/80 {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.text-gray-500 {
+  color: var(--text-secondary) !important;
+}
+
+.text-gray-900 {
+  color: var(--text-primary) !important;
+}
+
+.border {
+  border-color: var(--border-primary) !important;
+}
+
+.text-blue-700 {
+  color: var(--accent-primary) !important;
+}
+
+.text-blue-700:hover {
+  color: var(--accent-hover) !important;
+}
+
+/* Override Tailwind's dark mode classes to use our theme variables */
+textarea, input, select, button {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+/* Ensure all text elements use theme colors */
+h1, h2, h3, label, div, span, li {
+  color: var(--text-primary);
+}
+
+/* Secondary text elements */
+.text-xs {
+  color: var(--text-secondary) !important;
+}
+
+/* Theme dropdown specific styling */
+#themeDropdown {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+#themeDropdown button {
+  color: var(--text-primary) !important;
+}
+
+#themeDropdown button:hover {
+  background-color: var(--bg-tertiary) !important;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Subtle highlight for active reference in preview */
+span[data-refid].active {
+  background-color: rgba(59, 130, 246, 0.15); /* blue-500/15 */
+  border-radius: 4px;
+  padding: 0 2px;
+}
+
+/* Fix text selection colors for light mode */
+::selection {
+  background-color: rgba(59, 130, 246, 0.3); /* blue-500/30 */
+  color: inherit;
+}
+
+::-moz-selection {
+  background-color: rgba(59, 130, 246, 0.3); /* blue-500/30 */
+  color: inherit;
+}
+
+/* Ensure proper contrast in dark mode */
+.dark ::selection {
+  background-color: rgba(59, 130, 246, 0.4); /* blue-500/40 */
+  color: inherit;
+}
+
+.dark ::-moz-selection {
+  background-color: rgba(59, 130, 246, 0.4); /* blue-500/40 */
+  color: inherit;
+}
