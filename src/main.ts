@@ -32,7 +32,11 @@ let recentsVisible = false;
 let inlineVersesEnabled = false;
 
 function applyTheme(theme: string) {
+  // Keep data-theme for CSS variables
   document.documentElement.setAttribute("data-theme", theme);
+  // Also toggle Tailwind's "dark" class so `dark:*` variants activate
+  const isDark = theme.startsWith("dark");
+  document.documentElement.classList.toggle("dark", isDark);
   localStorage.setItem("theme", theme);
 }
 
