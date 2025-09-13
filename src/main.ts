@@ -155,7 +155,7 @@ function renderRefList() {
           ? `<div class="mt-2 text-sm text-gray-500">Fetching verse text…</div>`
           : cache === null
           ? `<div class="mt-2 text-sm italic text-gray-500">No verse text available from demo API.</div>`
-          : `<div class="mt-2 text-sm whitespace-pre-wrap leading-relaxed">${escapeForHtml(cache)}</div>`
+          : `<div class="mt-2 text-sm whitespace-pre-wrap leading-relaxed">${formatVerseText(cache)}</div>`
         : "";
     
     return `
@@ -163,7 +163,6 @@ function renderRefList() {
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="font-medium">${escapeForHtml(m.display)}</div>
-            <div class="text-xs text-gray-500">${m.parts.map(p => p.start===p.end? `${p.start}` : `${p.start}-${p.end}`).join(", ")}</div>
           </div>
           <a class="text-xs underline text-blue-700"
              href="https://www.biblegateway.com/passage/?search=${encodeURIComponent(m.display)}"
@@ -179,6 +178,14 @@ function renderRefList() {
 
 function escapeForHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Format verse text with superscript-style verse numbers
+function formatVerseText(text: string): string {
+  const escaped = escapeForHtml(text);
+  
+  // Style all verse numbers as superscript, including the first one
+  return escaped.replace(/\b(\d+)\s+/g, '<sup class="text-xs text-gray-600 mr-1">$1</sup>');
 }
 
 // Event: paste plain text (strip rich formatting)

@@ -91,9 +91,9 @@ const BOOK_ALT = (() => {
   return names.map(esc).join("|");
 })();
 
-// Example patterns like: "Jn 3:16-18", "1 Cor 13:4–7", "Genesis 1:1,3,5"
+// Example patterns like: "Jn 3:16-18", "1 Cor 13:4–7", "Genesis 1:1,3,5", "Matt. 15:18-20"
 export const REF_REGEX = new RegExp(
-  String.raw`(?:^|[\s(])(${BOOK_ALT})\s+(\d{1,3})\s*:\s*([\d,-–]+?)(?=\s*[;.!?\s)]|$)`,
+  String.raw`(?:^|[\s(])(${BOOK_ALT})\.?\s+(\d{1,3})\s*:\s*([\d,-–]+?)(?=\s*[;.!?\s)]|$)`,
   "gi"
 );
 

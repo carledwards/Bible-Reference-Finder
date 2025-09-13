@@ -154,4 +154,30 @@ describe("parseReferences", () => {
     const revMatch = matches.find(m => m.book === "Revelation");
     expect(revMatch).toBeDefined();
   });
+
+  it("handles abbreviated book names with periods", () => {
+    const text = "(Matt. 15:18–20) and (Gal. 5:19–21).";
+    const matches = parseReferences(text);
+    expect(matches).toHaveLength(2);
+    
+    expect(matches[0].book).toBe("Matthew");
+    expect(matches[0].chapter).toBe(15);
+    expect(matches[0].parts).toEqual([{ start: 18, end: 20 }]);
+    
+    expect(matches[1].book).toBe("Galatians");
+    expect(matches[1].chapter).toBe(5);
+    expect(matches[1].parts).toEqual([{ start: 19, end: 21 }]);
+  });
+
+  it("handles mixed period and non-period abbreviations", () => {
+    const text = "Compare Matt. 5:3 with Mt 5:4 and see Gal 6:1 vs Gal. 6:2.";
+    const matches = parseReferences(text);
+    expect(matches).toHaveLength(4);
+    
+    // All should resolve to the same books
+    expect(matches[0].book).toBe("Matthew");
+    expect(matches[1].book).toBe("Matthew");
+    expect(matches[2].book).toBe("Galatians");
+    expect(matches[3].book).toBe("Galatians");
+  });
 });
