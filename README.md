@@ -1,1 +1,1 @@
-# Bible-Reference-Finder
+# Bible Reference Finder
