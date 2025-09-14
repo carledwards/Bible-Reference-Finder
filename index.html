@@ -41,15 +41,24 @@
       <main class="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
         <section class="lg:col-span-7 flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <label class="text-sm font-semibold" for="inputText">Input text</label>
-            <button id="recentsToggle" class="text-xs px-2 py-1 border rounded hover:bg-gray-100 text-gray-600">
-              Recent Texts ▼
-            </button>
+            <label class="text-sm font-semibold" for="inputText">Input</label>
+            <div class="flex items-center gap-2">
+              <button id="inputCopyBtn" class="text-xs px-2 py-1 border rounded hover:bg-gray-100 text-gray-600" title="Copy input text" aria-label="Copy input text">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="10" height="10" rx="2"></rect>
+                  <rect x="5" y="5" width="10" height="10" rx="2"></rect>
+                </svg>
+              </button>
+              <button id="recentsToggle" class="text-xs px-2 py-1 border rounded hover:bg-gray-100 text-gray-600">
+                Recents ▼
+              </button>
+            </div>
           </div>
           
           <div id="recentsPanel" class="hidden border rounded bg-white shadow-sm">
-            <div class="p-2 border-b text-xs text-gray-500 font-medium">
-              Recent Texts (click to load)
+            <div class="p-2 border-b text-xs text-gray-500 font-medium flex items-center justify-between">
+              <span>Recents (click to load)</span>
+              <button id="recentsResetButton" class="text-xs px-2 py-1 border rounded hover:bg-gray-100 text-gray-600" title="Clear recents and verse cache, then reload">Reset</button>
             </div>
             <ul id="recentsList" class="max-h-48 overflow-y-auto divide-y">
               <li class="p-2 text-xs text-gray-500">No recent texts yet.</li>
@@ -61,10 +70,18 @@
             placeholder="Paste any text. E.g. 'We love John 3:16-18 and 1 Cor 13:4–7; 14:1.'"></textarea>
 
           <div class="flex items-center justify-between">
-            <label class="text-sm font-medium">Marked preview</label>
-            <button id="inlineVersesBtn" class="text-xs px-2 py-1 border rounded hover:bg-gray-100 text-gray-600">
-              Insert inline verses
-            </button>
+            <label class="text-sm font-medium">Preview</label>
+            <div class="flex items-center gap-2">
+              <button id="previewCopyBtn" class="text-xs px-2 py-1 border rounded hover:bg-gray-100 text-gray-600" title="Copy preview text" aria-label="Copy preview text">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="10" height="10" rx="2"></rect>
+                  <rect x="5" y="5" width="10" height="10" rx="2"></rect>
+                </svg>
+              </button>
+              <button id="inlineVersesBtn" class="text-xs px-2 py-1 border rounded hover:bg-gray-100 text-gray-600">
+                Insert inline verses
+              </button>
+            </div>
           </div>
           <div id="markedPreview"
             class="p-3 bg-white border rounded shadow-sm text-[15px] leading-7 whitespace-pre-wrap"></div>

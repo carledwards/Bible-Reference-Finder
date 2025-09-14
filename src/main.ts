@@ -21,6 +21,9 @@ const recentsToggle = document.getElementById("recentsToggle") as HTMLButtonElem
 const recentsPanel = document.getElementById("recentsPanel") as HTMLDivElement;
 const recentsList = document.getElementById("recentsList") as HTMLUListElement;
 const inlineVersesBtn = document.getElementById("inlineVersesBtn") as HTMLButtonElement;
+const recentsResetButton = document.getElementById("recentsResetButton") as HTMLButtonElement | null;
+const inputCopyBtn = document.getElementById("inputCopyBtn") as HTMLButtonElement | null;
+const previewCopyBtn = document.getElementById("previewCopyBtn") as HTMLButtonElement | null;
 
 let inputText = DEFAULT_TEXT;
 let version = "web"; // "web" or "kjv"
@@ -92,7 +95,7 @@ function addToRecents(text: string) {
 function toggleRecents() {
   recentsVisible = !recentsVisible;
   recentsPanel.classList.toggle("hidden", !recentsVisible);
-  recentsToggle.textContent = recentsVisible ? "Recent Texts ▲" : "Recent Texts ▼";
+  recentsToggle.textContent = recentsVisible ? "Recents ▲" : "Recents ▼";
 }
 
 function renderRecents() {
@@ -178,7 +181,7 @@ function addInlineVerses(html: string): string {
       if (startIndex !== -1) {
         const endIndex = result.indexOf(refSpanEnd, startIndex) + refSpanEnd.length;
         if (endIndex !== -1) {
-          const verseHtml = `<div class="my-3 mx-6 p-3 bg-gray-50 border-l-4 border-blue-300 italic text-sm leading-relaxed whitespace-pre-wrap">${formatVerseText(cache)}</div>`;
+          const verseHtml = `<div data-inline-verse="true" class="my-3 mx-6 p-3 bg-gray-50 border-l-4 border-blue-300 italic text-sm leading-relaxed whitespace-pre-wrap">${formatVerseText(cache)}</div>`;
           result = result.slice(0, endIndex) + verseHtml + result.slice(endIndex);
         }
       }
@@ -207,10 +210,19 @@ function renderRefList() {
           <div>
             <div class="font-medium">${escapeForHtml(m.display)}</div>
           </div>
-          <a class="text-xs underline text-blue-700"
-             href="https://www.biblegateway.com/passage/?search=${encodeURIComponent(m.display)}"
-             target="_blank" rel="noreferrer"
-             title="Open on BibleGateway">Open</a>
+          <div class="flex items-center gap-2">
+            ${isActive ? `<button class="text-xs px-1.5 py-0.5 border rounded hover:bg-gray-100 text-gray-600" data-action="copy-ref" title="Copy text" aria-label="Copy text">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="10" height="10" rx="2"></rect>
+                <rect x="5" y="5" width="10" height="10" rx="2"></rect>
+              </svg>
+            </button>` : ""}
+            <a class="text-xs text-blue-700"
+               href="https://www.biblegateway.com/passage/?search=${encodeURIComponent(m.display)}"
+               target="_blank" rel="noreferrer"
+               aria-label="Open on BibleGateway"
+               title="Open on BibleGateway">↗</a>
+          </div>
         </div>
         ${detail}
       </li>`;
@@ -228,7 +240,8 @@ function formatVerseText(text: string): string {
   const escaped = escapeForHtml(text);
   
   // Style all verse numbers as superscript, including the first one
-  return escaped.replace(/\b(\d+)\s+/g, '<sup class="text-xs text-gray-600 mr-1">$1</sup>');
+  // Add a literal space after the superscript so copied text has "16 For..." not "16For..."
+  return escaped.replace(/\b(\d+)\s+/g, '<sup class="text-xs text-gray-600 mr-1">$1</sup> ');
 }
 
 // Event: paste plain text (strip rich formatting)
@@ -256,7 +269,30 @@ previewEl.addEventListener("click", (e) => {
 
 // Event: click delegation in list
 refsListEl.addEventListener("click", (e) => {
-  const li = (e.target as HTMLElement).closest("li[data-id]") as HTMLLIElement | null;
+  const target = e.target as HTMLElement;
+
+  // Handle copy button clicks
+  const copyBtn = target.closest('button[data-action="copy-ref"]') as HTMLButtonElement | null;
+  if (copyBtn) {
+    const li = copyBtn.closest("li[data-id]") as HTMLLIElement | null;
+    const refId = li?.getAttribute("data-id") || "";
+    const m = matches.find(mm => mm.id === refId);
+    if (m) {
+      const cache = fetched[makeCacheKey(m, version)];
+      let text = m.display;
+      if (typeof cache === "string") {
+        // Put each verse on its own line and ensure space after verse number
+        const normalized = cache.replace(/\s*(\d+)\s+/g, "\n$1 ").trim();
+        text += "\n" + normalized;
+      }
+      copyTextToClipboard(text, copyBtn);
+    }
+    e.stopPropagation();
+    return;
+  }
+
+  // Otherwise, select the clicked list item
+  const li = target.closest("li[data-id]") as HTMLLIElement | null;
   if (!li) return;
   const refId = li.getAttribute("data-id");
   if (!refId) return;
@@ -323,6 +359,46 @@ recentsList.addEventListener("click", (e) => {
   if (index >= 0) {
     loadRecentText(index);
   }
+});
+
+// Reset button in Recents panel: clear verse cache and recents, then reload
+// Reset button in Recents panel: clear verse cache and recents, then reload
+recentsResetButton?.addEventListener("click", () => {
+  fetched = {};
+  localStorage.removeItem("recentTexts");
+  location.reload();
+});
+
+// Copy helpers
+function copyTextToClipboard(text: string, btn: HTMLButtonElement | null) {
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (btn) {
+        const original = btn.innerHTML;
+        btn.innerHTML = "Copied";
+        setTimeout(() => { btn.innerHTML = original; }, 900);
+      }
+    }).catch(() => {
+      // Silently ignore if clipboard API fails
+    });
+  }
+}
+
+// Wire copy buttons
+inputCopyBtn?.addEventListener("click", () => {
+  copyTextToClipboard(inputEl.value, inputCopyBtn);
+});
+
+previewCopyBtn?.addEventListener("click", () => {
+  // Clone preview and add newlines around inline verse blocks for cleaner copy
+  const clone = previewEl.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll('[data-inline-verse="true"]').forEach((el) => {
+    el.prepend(document.createTextNode("\n"));
+    el.appendChild(document.createTextNode("\n"));
+  });
+  const text = (clone.textContent ?? "").replace(/\n{3,}/g, "\n\n").trim();
+  copyTextToClipboard(text, previewCopyBtn);
 });
 
 // Inline verses button (one-shot insert)
