@@ -20,7 +20,7 @@ const themeChevron = document.getElementById("themeChevron") as HTMLElement;
 const recentsToggle = document.getElementById("recentsToggle") as HTMLButtonElement;
 const recentsPanel = document.getElementById("recentsPanel") as HTMLDivElement;
 const recentsList = document.getElementById("recentsList") as HTMLUListElement;
-const inlineVersesToggle = document.getElementById("inlineVerses") as HTMLInputElement;
+const inlineVersesBtn = document.getElementById("inlineVersesBtn") as HTMLButtonElement;
 
 let inputText = DEFAULT_TEXT;
 let version = "web"; // "web" or "kjv"
@@ -30,6 +30,13 @@ let matches: RefMatch[] = [];
 let recentTexts: string[] = [];
 let recentsVisible = false;
 let inlineVersesEnabled = false;
+
+function makeCacheKey(ref: RefMatch, version: string): string {
+  const spec = ref.parts
+    .map((p) => (p.start === p.end ? `${p.start}` : `${p.start}-${p.end}`))
+    .join(",");
+  return `${ref.book}|${ref.chapter}|${spec}|${version}`;
+}
 
 function applyTheme(theme: string) {
   // Keep data-theme for CSS variables
@@ -162,7 +169,7 @@ function addInlineVerses(html: string): string {
   let result = html;
   
   for (const match of matches) {
-    const cache = fetched[match.id];
+    const cache = fetched[makeCacheKey(match, version)];
     if (cache && typeof cache === 'string') {
       const refSpan = `<span id="ref-${match.id}"`;
       const refSpanEnd = '</span>';
@@ -171,7 +178,7 @@ function addInlineVerses(html: string): string {
       if (startIndex !== -1) {
         const endIndex = result.indexOf(refSpanEnd, startIndex) + refSpanEnd.length;
         if (endIndex !== -1) {
-          const verseHtml = `<div class="my-3 mx-6 p-3 bg-gray-50 border-l-4 border-blue-300 italic text-sm leading-relaxed">${formatVerseText(cache)}</div>`;
+          const verseHtml = `<div class="my-3 mx-6 p-3 bg-gray-50 border-l-4 border-blue-300 italic text-sm leading-relaxed whitespace-pre-wrap">${formatVerseText(cache)}</div>`;
           result = result.slice(0, endIndex) + verseHtml + result.slice(endIndex);
         }
       }
@@ -184,7 +191,7 @@ function addInlineVerses(html: string): string {
 function renderRefList() {
   const rows = matches.map((m) => {
     const isActive = m.id === activeId;
-    const cache = fetched[m.id];
+    const cache = fetched[makeCacheKey(m, version)];
     const detail =
       isActive
         ? cache === undefined
@@ -318,11 +325,15 @@ recentsList.addEventListener("click", (e) => {
   }
 });
 
-// Inline verses toggle
-inlineVersesToggle.addEventListener("change", () => {
-  inlineVersesEnabled = inlineVersesToggle.checked;
-  localStorage.setItem("inlineVerses", inlineVersesEnabled.toString());
-  ensureFetchAllVerses(); // Auto-fetch verses when enabled
+// Inline verses button (one-shot insert)
+function updateInlineBtn() {
+  if (!inlineVersesBtn) return;
+  inlineVersesBtn.textContent = inlineVersesEnabled ? "Refresh inline verses" : "Insert inline verses";
+}
+inlineVersesBtn.addEventListener("click", () => {
+  inlineVersesEnabled = true;
+  updateInlineBtn();
+  ensureFetchAllVerses(); // Fetch and then render
   renderPreview();
 });
 
@@ -340,6 +351,9 @@ function scheduleArchive() {
 
 function setInput(text: string, skipArchive = false) {
   inputText = text;
+  // Reset inline verses when text changes
+  inlineVersesEnabled = false;
+  updateInlineBtn();
   recompute();
   
   if (!skipArchive) {
@@ -357,46 +371,80 @@ function setActive(refId: string) {
 
 function ensureFetchActive() {
   if (!activeId) return;
-  if (fetched[activeId] !== undefined) return;
   const ref = matches.find((m) => m.id === activeId);
   if (!ref) return;
-  fetched[activeId] = undefined;
+  const key = makeCacheKey(ref, version);
+  if (fetched[key] !== undefined) return;
+  fetched[key] = undefined;
   renderRefList();
   fetchVerseText(ref, version).then((t) => {
-    fetched[activeId!] = t;
+    fetched[key] = t;
     renderRefList();
   });
 }
 
-// Load inline verses preference
-function loadInlineVersesPreference(): boolean {
-  const saved = localStorage.getItem("inlineVerses");
-  return saved === "true";
-}
+// Inline verses preference is not persisted for button behavior
 
 // Auto-fetch verses when inline mode is enabled
 function ensureFetchAllVerses() {
   if (!inlineVersesEnabled) return;
   
   for (const match of matches) {
-    if (fetched[match.id] === undefined) {
-      fetched[match.id] = undefined;
+    const key = makeCacheKey(match, version);
+    if (fetched[key] === undefined) {
+      fetched[key] = undefined;
       fetchVerseText(match, version).then((t) => {
-        fetched[match.id] = t;
+        fetched[key] = t;
         renderPreview(); // Re-render to show the new verse
       });
     }
   }
 }
 
-// Initial load
+/* Initial load */
 const initialTheme = getInitialTheme();
 applyTheme(initialTheme);
 themeButtonText.textContent = getThemeDisplayName(initialTheme);
 recentTexts = loadRecentTexts();
 renderRecents();
-inlineVersesEnabled = loadInlineVersesPreference();
-inlineVersesToggle.checked = inlineVersesEnabled;
-inputEl.value = inputText;
-recompute();
+// Load recent (if any) otherwise default text
+if (recentTexts.length > 0) {
+  inputEl.value = recentTexts[0];
+  setInput(recentTexts[0], true); // don't archive default text
+} else {
+  inputEl.value = inputText;
+  recompute();
+}
+// Auto-trigger inline verses on first load (for recent or default text)
+inlineVersesEnabled = true;
+updateInlineBtn();
 ensureFetchAllVerses();
+renderPreview();
+
+// Expose console utilities for cache management
+// Usage in DevTools console:
+//   BRF.clearVerseCache()   -> clears in-memory verse fetch cache and re-renders
+//   BRF.clearRecents()      -> clears saved recent texts (localStorage)
+//   BRF.clearAll()          -> clears both verse cache and recents
+(window as any).BRF = {
+  clearVerseCache: () => {
+    fetched = {};
+    renderPreview();
+    renderRefList();
+    console.info("BRF: verse cache cleared");
+  },
+  clearRecents: () => {
+    localStorage.removeItem("recentTexts");
+    recentTexts = [];
+    renderRecents();
+    console.info("BRF: recents cleared");
+  },
+  clearAll: () => {
+    fetched = {};
+    localStorage.removeItem("recentTexts");
+    renderPreview();
+    renderRefList();
+    renderRecents();
+    console.info("BRF: verse cache and recents cleared");
+  }
+};

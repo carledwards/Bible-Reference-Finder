@@ -1,6 +1,11 @@
 import type { RefMatch } from "./parser";
 
-// bible-api.com expects "John 3:16-18" and versions like KJV, WEB ("web")
+/**
+ * Fetch verse text from bible-api.com.
+ * We prefer the structured `verses` array (which contains one entry per verse)
+ * and format it ourselves so the count exactly matches the requested verses.
+ * Falls back to `data.text` when `verses` is missing.
+ */
 export async function fetchVerseText(ref: RefMatch, version: string): Promise<string | null> {
   try {
     const spec = ref.parts
@@ -11,6 +16,24 @@ export async function fetchVerseText(ref: RefMatch, version: string): Promise<st
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
+
+    // Build the exact list of verse numbers requested
+    const requested: number[] = [];
+    for (const part of ref.parts) {
+      for (let v = part.start; v <= part.end; v++) requested.push(v);
+    }
+
+    // Prefer the structured verses array to avoid any ambiguity
+    if (Array.isArray(data?.verses) && data.verses.length > 0) {
+      const wanted = new Set(requested);
+      const segments = data.verses
+        .filter((v: any) => wanted.has(Number(v.verse)))
+        .map((v: any) => `${Number(v.verse)} ${String(v.text ?? "").trim()}`.replace(/\s+/g, " ").trim());
+      const combined = segments.join(" ").trim();
+      return combined || null;
+    }
+
+    // Fallback: format the plain text by adding verse numbers heuristically
     if (data?.text) {
       const text = String(data.text).trim();
       return addVerseNumbers(text, ref);
